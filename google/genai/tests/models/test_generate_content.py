@@ -2533,3 +2533,37 @@ async def test_error_handling_stream_async(client):
 
   except errors.ClientError as e:
     assert ('Developer instruction is not enabled' in e.message)
+
+
+def test_response_json_schema_with_one_of(client):
+  """Test that the model accepts a JSONSchema with oneOf."""
+  schema_with_one_of = {
+      'type': 'object',
+      'properties': {
+          'resource_config': {
+              'type': 'object',
+              'oneOf': [
+                  {
+                      'type': 'object',
+                      'properties': {'size': {'type': 'integer'}},
+                  },
+                  {
+                      'type': 'object',
+                      'properties': {'tier': {'type': 'string'}},
+                  },
+              ],
+          }
+      },
+  }
+
+  response = client.models.generate_content(
+      model='gemini-2.5-flash',
+      contents='Generate a configuration for a resource with size 10.',
+      config={
+          'response_mime_type': 'application/json',
+          'response_json_schema': schema_with_one_of,
+      },
+  )
+
+  # Assert the call succeeded
+  assert response.text is not None
